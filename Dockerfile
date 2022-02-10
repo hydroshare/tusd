@@ -1,9 +1,9 @@
-FROM golang:1.17.6-alpine AS builder
+FROM golang:1.17.6-bullseye AS builder
 WORKDIR /go/src/github.com/tus/tusd
 
 # Add gcc and libc-dev early so it is cached
 RUN set -xe \
-	&& apk add --no-cache gcc libc-dev
+	&& apt-get install -y gcc libc-dev
 
 # Install dependencies earlier so they are cached between builds
 COPY go.mod go.sum ./
@@ -25,13 +25,15 @@ RUN set -xe \
         -o /go/bin/tusd ./cmd/tusd/main.go
 
 # start a new stage that copies in the binary built in the previous stage
-FROM alpine:3.15.0
+FROM debian:bullseye-slim
+
 WORKDIR /srv/tusd-data
 
-RUN apk add --no-cache ca-certificates jq \
-    && addgroup -g 1000 tusd \
-    && adduser -u 1000 -G tusd -s /bin/sh -D tusd \
-    && mkdir -p /srv/tusd-hooks \
+RUN apt-get update \
+    && apt-get install -y ca-certificates jq
+RUN addgroup --gid 1000 tusd
+RUN adduser --uid 1000 --ingroup tusd --shell /bin/sh --disabled-password --no-create-home --gecos 'tus user' tusd 
+RUN mkdir -p /srv/tusd-hooks \
     && chown tusd:tusd /srv/tusd-data
 
 COPY --from=builder /go/bin/tusd /usr/local/bin/tusd
