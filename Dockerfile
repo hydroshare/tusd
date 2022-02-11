@@ -30,16 +30,13 @@ FROM debian:bullseye-slim
 WORKDIR /srv/tusd-data
 
 RUN apt-get update \
-    && apt-get install -y ca-certificates jq
-RUN addgroup --gid 1000 tusd
-RUN adduser --uid 1000 --ingroup tusd --shell /bin/sh --disabled-password --no-create-home --gecos 'tus user' tusd 
-RUN mkdir -p /srv/tusd-hooks \
+    && apt-get install -y ca-certificates jq \
+    && addgroup --gid 1000 tusd \
+    && adduser --uid 1000 --ingroup tusd --shell /bin/sh --disabled-password --no-create-home --gecos 'tus user' tusd \
+    && mkdir -p /srv/tusd-hooks \
     && chown tusd:tusd /srv/tusd-data
 
 COPY --from=builder /go/bin/tusd /usr/local/bin/tusd
 
 EXPOSE 1080
 USER tusd
-
-ENTRYPOINT ["tusd"]
-CMD [ "--hooks-dir", "/srv/tusd-hooks" ]
