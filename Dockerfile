@@ -30,13 +30,19 @@ FROM debian:bullseye-slim
 WORKDIR /srv/tusd-data
 
 RUN apt-get update \
-    && apt-get install -y ca-certificates jq \
-    && addgroup --gid 1000 tusd \
-    && adduser --uid 1000 --ingroup tusd --shell /bin/sh --disabled-password --no-create-home --gecos 'tus user' tusd \
+    && apt-get install -y ca-certificates jq net-tools procps python3 python3-irodsclient \
+    && addgroup --gid 10001 tusd \
+    && adduser --uid 10001 --ingroup tusd --shell /bin/sh --disabled-password --no-create-home --gecos 'tus user' tusd \
+    && chown tusd:tusd /srv/tusd-data \
     && mkdir -p /srv/tusd-hooks \
-    && chown tusd:tusd /srv/tusd-data
+    && chown tusd:tusd /srv/tusd-hooks \
+    && mkdir -p /tmp/tusd \
+    && chown tusd:tusd /tmp/tusd 
 
 COPY --from=builder /go/bin/tusd /usr/local/bin/tusd
+COPY docker-entrypoint.sh /docker-entrypoint.sh 
+RUN chown tusd:tusd /docker-entrypoint.sh
 
 EXPOSE 1080
-USER tusd
+USER root
+CMD /docker-entrypoint.sh
